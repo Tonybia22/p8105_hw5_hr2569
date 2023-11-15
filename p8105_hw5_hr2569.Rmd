@@ -113,3 +113,60 @@ longitudinal |>
 
 From the spaghetti plot, we can see that experiment group has higher average value of observations and tend to have a higher rate of increaing over time.
 
+# Problem 3
+
+```{r result function}
+## set.seed
+set.seed(0)
+
+## function to get estimate and p_value of 5000 samples
+one_sample_t <- function(mu){
+  n = 30
+  sigma = 5
+
+  data = list(
+    testdata = list(),
+    test_result = list()
+  )
+
+  for (i in 1:5000) {
+    data$testdata[[i]] <- rnorm(n,mean = mu,sd = sigma)
+    data$test_result[[i]] <- t.test(data$testdata[[i]])|>
+    broom::tidy()
+  }
+
+  estimate_result <- tibble(
+    data$test_result
+  )|>
+    unnest()|>
+    mutate(
+      mu = mu
+    )|>
+    select(mu,estimate,p.value)
+  
+  return(estimate_result)
+}
+```
+
+
+```{r mu_0}
+mu0_result <- one_sample_t(0)
+```
+
+
+```{r mu1_6}
+mu1_6 <- c(1,2,3,4,5,6)
+mu16_result <- map(mu1_6,\(mu) one_sample_t(mu))|>
+  tibble()|>
+  unnest()
+```
+
+
+```{r final_result}
+final_result <- bind_rows(mu0_result,mu16_result)
+```
+
+```{r}
+
+```
+

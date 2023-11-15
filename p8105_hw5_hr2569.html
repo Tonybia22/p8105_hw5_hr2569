@@ -622,6 +622,61 @@ longitudinal |&gt;
 average value of observations and tend to have a higher rate of
 increaing over time.</p>
 </div>
+<div id="problem-3" class="section level1">
+<h1>Problem 3</h1>
+<pre class="r"><code>## set.seed
+set.seed(0)
+
+## function to get estimate and p_value of 5000 samples
+one_sample_t &lt;- function(mu){
+  n = 30
+  sigma = 5
+
+  data = list(
+    testdata = list(),
+    test_result = list()
+  )
+
+  for (i in 1:5000) {
+    data$testdata[[i]] &lt;- rnorm(n,mean = mu,sd = sigma)
+    data$test_result[[i]] &lt;- t.test(data$testdata[[i]])|&gt;
+    broom::tidy()
+  }
+
+  estimate_result &lt;- tibble(
+    data$test_result
+  )|&gt;
+    unnest()|&gt;
+    mutate(
+      mu = mu
+    )|&gt;
+    select(mu,estimate,p.value)
+  
+  return(estimate_result)
+}</code></pre>
+<pre class="r"><code>mu0_result &lt;- one_sample_t(0)</code></pre>
+<pre><code>## Warning: `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.</code></pre>
+<pre class="r"><code>mu1_6 &lt;- c(1,2,3,4,5,6)
+mu16_result &lt;- map(mu1_6,\(mu) one_sample_t(mu))|&gt;
+  tibble()|&gt;
+  unnest()</code></pre>
+<pre><code>## Warning: `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.
+## `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.
+## `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.
+## `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.
+## `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.
+## `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`data$test_result`)`.</code></pre>
+<pre><code>## Warning: `cols` is now required when using `unnest()`.
+## ℹ Please use `cols = c(`map(mu1_6, function(mu) one_sample_t(mu))`)`.</code></pre>
+<pre class="r"><code>final_result &lt;- bind_rows(mu0_result,mu16_result)</code></pre>
+</div>
 
 
 
