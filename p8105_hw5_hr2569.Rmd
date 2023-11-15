@@ -1,0 +1,29 @@
+---
+title: "P8105_hw5"
+author: "Hongzhu Ren"
+date: "2023-11-15"
+output: html_document
+---
+```{r setup}
+library(tidyverse)
+library(readr)
+```
+
+# Problem 1
+```{r homicide data}
+## read data
+data_url <- "https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv"
+homicide <- read_csv(data_url)
+```
+
+The raw data contains `r nrow(homicide)` obervations of `r ncol(homicide)` variables, containing `r colnames(homicide)`.
+
+```{r}
+## add city_state variable
+homicide_tidy <- homicide|>
+  mutate(
+    city_state = paste(city,state,sep = ",")
+  )
+
+```
+
