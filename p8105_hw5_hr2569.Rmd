@@ -73,3 +73,43 @@ city_test |>
 ```
 
 The plot suggests a widely ranged rate of unsolved homicides. Chicago has a high rate with low CI, indicating this place is at high risk of homicide.
+
+# Problem 2
+We first generate files names and form a initial data frame containg the information of group and id.
+```{r}
+## generate file names
+file_names <- list.files(path = "./data")
+file_path <- str_c("./data",file_names,sep = "/")
+
+## generate group and id
+group_id <- 
+  tibble(
+    group_id = str_remove(file_names,".csv")
+  )
+```
+
+Read longitudinal data into the initial data frame with map function and use pivot_longer to get longitudinal dataset for plotting.
+
+```{r}
+## read longitudinal observations data
+longitudinal <- mutate(separate(group_id, col = group_id,into = c("group","id"),sep = "_"))|>
+  mutate(
+    observation = map(file_path,read_csv)
+    )|>
+  unnest(observation)|> 
+  pivot_longer(
+    cols = starts_with("week"),
+    names_prefix = "week_",
+    names_to = "week",
+    values_to = "observation" 
+  )
+
+## make spaghetti plot
+longitudinal |>
+  ggplot(aes(x = week, y = observation, group = id, color = group))+
+  geom_line()+
+  facet_wrap(~group)
+```
+
+From the spaghetti plot, we can see that experiment group has higher average value of observations and tend to have a higher rate of increaing over time.
+
