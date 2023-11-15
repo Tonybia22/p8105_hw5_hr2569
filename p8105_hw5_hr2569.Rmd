@@ -111,10 +111,10 @@ longitudinal |>
   facet_wrap(~group)
 ```
 
-From the spaghetti plot, we can see that experiment group has higher average value of observations and tend to have a higher rate of increaing over time.
+From the spaghetti plot, we can see that experiment group has higher average value of observations and tend to have a higher rate of increasing over time.
 
 # Problem 3
-
+We first write a function to generate estimation and p.value for each mu.
 ```{r result function}
 ## set.seed
 set.seed(0)
@@ -148,11 +148,13 @@ one_sample_t <- function(mu){
 }
 ```
 
+`mu0_result` contains the estimates and p.values of t.test when mu=0
 
 ```{r mu_0}
 mu0_result <- one_sample_t(0)
 ```
 
+`mu16_result` contains the estimates and p.values of t.test when mu=1,2,3,4,5,6.
 
 ```{r mu1_6}
 mu1_6 <- c(1,2,3,4,5,6)
@@ -161,12 +163,83 @@ mu16_result <- map(mu1_6,\(mu) one_sample_t(mu))|>
   unnest()
 ```
 
+combines two results and get the `final_result`
 
 ```{r final_result}
 final_result <- bind_rows(mu0_result,mu16_result)
 ```
 
-```{r}
+Befor making plot, we need to add reject tag
 
+```{r plot_tidy}
+final_plot <- final_result |>
+  mutate(
+    reject = case_when(
+      p.value<0.05 ~ 1,
+      p.value>=0.05 ~ 0
+    )
+  )
 ```
 
+```{r plot_effect_size}
+final_plot |>
+  group_by(mu)|>
+  summarise(
+    reject_portion = sum(reject==1)/n()
+  )|>
+  ggplot(aes(x = mu,y = reject_portion))+
+  geom_point()+
+  geom_line()+
+  labs(
+    title = "Reject portion of each mu"
+  )
+```
+
+Since sigma is given and fixed, the effect size solely depends on the difference of mu and H0 hypothesis. With bigger mu comes a bigger effect size, and larger effect size contributes to a higher power.
+
+Now we make the plot of estimated mu and true value.
+
+```{r plot_mean_estimate_1}
+final_plot |>
+  group_by(mu)|>
+  summarise(
+    mu_hat = mean(estimate)
+  )|>
+  ggplot(aes(x = mu,y = mu_hat))+
+  geom_point()+
+  geom_line()+
+  geom_abline(slope = 1,intercept = 0,color="red")+
+  labs(
+    title = "mu_hat and mu"
+  )
+```
+
+The red line is the reference for the identical relation of mu_hat and mu. The estimated mus from completed dataset are almost identical as the true value.
+
+```{r plot_mean_estimate_2}
+final_plot |>
+  filter(
+    reject==1
+  )|>
+  group_by(mu)|>
+  summarise(
+    mu_hat = mean(estimate)
+  )|>
+  ggplot(aes(x = mu,y = mu_hat))+
+  geom_point()+
+  geom_line()+
+  geom_abline(slope = 1,intercept = 0,color="red")+
+  labs(
+    title = "mu_hat(H0 rejected) and mu"
+  )
+```
+
+The red line is the reference for the identical relation of mu_hat and mu.
+
+For estimated mu from rejected, there is a significant difference when mu has true value of 1,2,3. 
+
+* For small mu. The differences are due to the low test power resulted from low effect size. In datasets of small mu, only those with larger sample means can be rejected. This will result in biased estimatation, thus the mean of rejected data tends to be larger than the true value.
+
+* For mu=0, the distribution is balanced even in rejected group, thus the group mean almost equals to the true value.
+
+* For large mu, the effect size and test power will be large as well. The null hypothesis will be rejected at a probability that almost equals 1. Thus the whole dataset will be accounted into the estimation and eventually get unbiased estimation.
