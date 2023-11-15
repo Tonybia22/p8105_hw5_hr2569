@@ -13,17 +13,58 @@ library(readr)
 ```{r homicide data}
 ## read data
 data_url <- "https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv"
-homicide <- read_csv(data_url)
+homicide <- read_csv(data_url, na = c("", "NA", "Unknown"))
 ```
 
-The raw data contains `r nrow(homicide)` obervations of `r ncol(homicide)` variables, containing `r colnames(homicide)`.
+The raw data contains `r nrow(homicide)` observations of `r ncol(homicide)` variables, containing `r colnames(homicide)`. Variables with prefix "victim" described the characteristics of victim, `disposition` describes the outcome of the case. 
 
-```{r}
+```{r homicide tidy}
 ## add city_state variable
 homicide_tidy <- homicide|>
   mutate(
-    city_state = paste(city,state,sep = ",")
-  )
+    city_state = str_c(city,state,sep = ",")
+  )|>
+  filter(city_state != "Tulsa,AL") 
+
+```
+
+```{r homicide unsolved}
+## get homicide unsolved in each city
+homicide_unsolved <- homicide_tidy |>
+  group_by(city_state)|>
+  summarise(
+    homicide = n(),
+    unsolved = sum(disposition %in% c("Closed without arrest", "Open/No arrest"))
+  )|>
+  arrange(unsolved)
+```
+
+The city with lowest unsolved cases is `r homicide_unsolved|>pull(city_state)|>first()`,the city with highest unsolved cases is `r homicide_unsolved|>pull(city_state)|>last()`
+
+```{r Baltimore,MD}
+Bal_test <- prop.test(
+  homicide_unsolved |>filter(city_state == "Baltimore,MD")|>pull(unsolved),
+   homicide_unsolved |>filter(city_state == "Baltimore,MD")|>pull(homicide))
+
+Bal_test |> broom::tidy()|>
+  select(estimate,conf.low,conf.high)|>
+  knitr::kable()
+```
+
+The outcome of prop.test is shown in the table above.
+
+```{r city test}
+city_test <- homicide_unsolved |>
+  mutate(
+    prop_test = map2(unsolved,homicide, \(x,y) prop.test(x=x,n=y)),
+    tidy_test = map(prop_test, broom::tidy)
+  )|>
+  unnest(tidy_test)|>
+  select(city_state,estimate,conf.low,conf.high)|>
+  mutate(city_state = fct_reorder(city_state,estimate))
+```
+
+```{r estimate plot}
 
 ```
 

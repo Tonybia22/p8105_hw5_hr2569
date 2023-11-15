@@ -373,23 +373,68 @@ display: none;
 <h1>Problem 1</h1>
 <pre class="r"><code>## read data
 data_url &lt;- &quot;https://raw.githubusercontent.com/washingtonpost/data-homicides/master/homicide-data.csv&quot;
-homicide &lt;- read_csv(data_url)</code></pre>
+homicide &lt;- read_csv(data_url, na = c(&quot;&quot;, &quot;NA&quot;, &quot;Unknown&quot;))</code></pre>
 <pre><code>## Rows: 52179 Columns: 12
 ## ── Column specification ────────────────────────────────────────────────────────
 ## Delimiter: &quot;,&quot;
-## chr (9): uid, victim_last, victim_first, victim_race, victim_age, victim_sex...
-## dbl (3): reported_date, lat, lon
+## chr (8): uid, victim_last, victim_first, victim_race, victim_sex, city, stat...
+## dbl (4): reported_date, victim_age, lat, lon
 ## 
 ## ℹ Use `spec()` to retrieve the full column specification for this data.
 ## ℹ Specify the column types or set `show_col_types = FALSE` to quiet this message.</code></pre>
-<p>The raw data contains 52179 obervations of 12 variables, containing
+<p>The raw data contains 52179 observations of 12 variables, containing
 uid, reported_date, victim_last, victim_first, victim_race, victim_age,
-victim_sex, city, state, lat, lon, disposition.</p>
+victim_sex, city, state, lat, lon, disposition. Variables with prefix
+“victim” described the characteristics of victim,
+<code>disposition</code> describes the outcome of the case.</p>
 <pre class="r"><code>## add city_state variable
 homicide_tidy &lt;- homicide|&gt;
   mutate(
-    city_state = paste(city,state,sep = &quot;,&quot;)
-  )</code></pre>
+    city_state = str_c(city,state,sep = &quot;,&quot;)
+  )|&gt;
+  filter(city_state != &quot;Tulsa,AL&quot;) </code></pre>
+<pre class="r"><code>## get homicide unsolved in each city
+homicide_unsolved &lt;- homicide_tidy |&gt;
+  group_by(city_state)|&gt;
+  summarise(
+    homicide = n(),
+    unsolved = sum(disposition %in% c(&quot;Closed without arrest&quot;, &quot;Open/No arrest&quot;))
+  )|&gt;
+  arrange(unsolved)</code></pre>
+<p>The city with lowest unsolved cases is Tampa,FL,the city with highest
+unsolved cases is Chicago,IL</p>
+<pre class="r"><code>Bal_test &lt;- prop.test(
+  homicide_unsolved |&gt;filter(city_state == &quot;Baltimore,MD&quot;)|&gt;pull(unsolved),
+   homicide_unsolved |&gt;filter(city_state == &quot;Baltimore,MD&quot;)|&gt;pull(homicide))
+
+Bal_test |&gt; broom::tidy()|&gt;
+  select(estimate,conf.low,conf.high)|&gt;
+  knitr::kable()</code></pre>
+<table>
+<thead>
+<tr class="header">
+<th align="right">estimate</th>
+<th align="right">conf.low</th>
+<th align="right">conf.high</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td align="right">0.6455607</td>
+<td align="right">0.6275625</td>
+<td align="right">0.6631599</td>
+</tr>
+</tbody>
+</table>
+<p>The outcome of prop.test is shown in the table above.</p>
+<pre class="r"><code>city_test &lt;- homicide_unsolved |&gt;
+  mutate(
+    prop_test = map2(unsolved,homicide, \(x,y) prop.test(x=x,n=y)),
+    tidy_test = map(prop_test, broom::tidy)
+  )|&gt;
+  unnest(tidy_test)|&gt;
+  select(city_state,estimate,conf.low,conf.high)|&gt;
+  mutate(city_state = fct_reorder(city_state,estimate))</code></pre>
 </div>
 
 
