@@ -65,6 +65,11 @@ city_test <- homicide_unsolved |>
 ```
 
 ```{r estimate plot}
-
+city_test |>
+  ggplot(aes(y=estimate,x=city_state))+
+  geom_point()+
+  geom_errorbar(aes(ymin = conf.low, ymax = conf.high)) + 
+  theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
+The plot suggests a widely ranged rate of unsolved homicides. Chicago has a high rate with low CI, indicating this place is at high risk of homicide.
