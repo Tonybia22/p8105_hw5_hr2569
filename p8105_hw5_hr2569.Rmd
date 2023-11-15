@@ -2,7 +2,7 @@
 title: "P8105_hw5"
 author: "Hongzhu Ren"
 date: "2023-11-15"
-output: html_document
+output: github_document
 ---
 ```{r setup}
 library(tidyverse)
@@ -242,4 +242,4 @@ For estimated mu from rejected, there is a significant difference when mu has tr
 
 * For mu=0, the distribution is balanced even in rejected group, thus the group mean almost equals to the true value.
 
-* For large mu, the effect size and test power will be large as well. The null hypothesis will be rejected at a probability that almost equals 1. Thus the whole dataset will be accounted into the estimation and eventually get unbiased estimation.
+* lFor large mu, the effect size and test power will be large as well. The null hypothesis will be rejected at a probability that almost equals 1. Thus the whole dataset will be accounted into the estimation and eventually get unbiased estimation.
